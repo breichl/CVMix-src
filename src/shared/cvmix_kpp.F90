@@ -2318,7 +2318,9 @@ contains
       end if
 
       cvmix_kpp_compute_unresolved_shear(kt) = -Cv*Vtc*zt_cntr(kt)*           &
-                            N_cntr(kt)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
+!                            N_cntr(kt)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
+!BGR the next line is a crude hack to approximate N_cntr at Z=OBL by using the maximum value of N^2
+            maxval(N_cntr)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
       if (cvmix_kpp_compute_unresolved_shear(kt).lt.                          &
           CVmix_kpp_params_in%minVtsqr) then
         cvmix_kpp_compute_unresolved_shear(kt) = CVmix_kpp_params_in%minVtsqr
