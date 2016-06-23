@@ -96,8 +96,11 @@ module cvmix_kinds_and_types
                     ! units: unitless
     ! QL, 150610
     ! Langmuir mixing induced enhancement factor to turbulent velocity scale
-    real(cvmix_r8) :: LangmuirEnhancementFactor
+    real(cvmix_r8) :: LangmuirEnhancement_W
                     ! units: unitless
+    ! Langmuir mixing induced enhancement factor to mixing coefficient
+    real(cvmix_r8) :: LangmuirEnhancement_K
+                    ! units: unitless   
     ! Surface Stokes drift magnitude
     real(cvmix_r8) :: SurfaceStokesDrift
                     ! units: m/s

@@ -166,8 +166,10 @@ contains
       case ("kOBL_depth")
         CVmix_vars%kOBL_depth = val
       ! QL, 150610
-      case ("LangmuirEnhancementFactor")
-        CVmix_vars%LangmuirEnhancementFactor = val
+      case ("LangmuirEnhancement_W")
+        CVmix_vars%LangmuirEnhancement_W = val
+      case ("LangmuirEnhancement_K")
+        CVmix_vars%LangmuirEnhancement_K = val
       case ("SurfaceStokesDrift")
         CVmix_vars%SurfaceStokesDrift = val
       case ('SimmonsCoeff')
