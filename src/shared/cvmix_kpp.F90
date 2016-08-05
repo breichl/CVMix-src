@@ -2046,18 +2046,9 @@ contains
            !print*, "langmuir_Efactor= ",           &
            !      langmuir_Efactor
            !! DEBUG
-           !if (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_CONSTANT) then
            do kw=1,n_sigma
-             w_m(kw) = w_m(kw)*langmuir_Efactor
+              w_m(kw) = w_m(kw)*langmuir_Efactor
            end do
-           !elseif (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_SHAPEFUNC) then
-           !   do kw=1,n_sigma
-           !     !BGR this will need done nicer
-           !     gsigratio = 1.0 + (langmuir_efactor-1.0) * &
-           !                 sigma_coord(kw)*(1-sigma_coord(kw))**2/0.15
-           !     w_m(kw) = w_m(kw)*gsigratio
-           !  end do
-           !endif
          else
            print*, "ERROR: you must pass in langmuir_Efactor if ",           &
                  "llangmuirEF is true!"
@@ -2084,18 +2075,9 @@ contains
             !print*, "langmuir_Efactor= ",           &
             !      langmuir_Efactor
             !! DEBUG
-            !if (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_CONSTANT) then
              do kw=1,n_sigma
                w_s(kw) = w_s(kw)*langmuir_Efactor
              end do
-            !elseif (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_SHAPEFUNC) then
-            !   do kw=1,n_sigma
-            !     !BGR this will need done nicer
-            !     gsigratio = 1.0 + (langmuir_efactor-1.0) * &
-            !          sigma_coord(kw)*(1-sigma_coord(kw))**2/0.15
-            !     w_s(kw) = w_s(kw)*gsigratio
-            !  end do
-            !endif
           else
             print*, "ERROR: you must pass in langmuir_Efactor if ",           &
                 "llangmuirEF is true!"
@@ -2233,18 +2215,9 @@ contains
             !print*, "langmuir_Efactor= ",           &
             !      langmuir_Efactor
             !! DEBUG
-            !if (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_CONSTANT) then
             do kw=1,n_sigma
               w_m(kw) = w_m(kw)*langmuir_Efactor
             end do
-            !elseif (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_SHAPEFUNC) then
-            !do kw=1,n_sigma
-            !    !BGR this will need done nicer
-            !    gsigratio = 1.0 + (langmuir_efactor-1.0) * &
-            !         sigma_coord*(1-sigma_coord)**2/0.15
-            !    w_m(kw) = w_m(kw)*gsigratio
-            ! end do
-            !endif
           else
             print*, "ERROR: you must pass in langmuir_Efactor if ",           &
                  "llangmuirEF is true!"
@@ -2271,18 +2244,9 @@ contains
             !print*, "langmuir_Efactor= ",           &
             !      langmuir_Efactor
             !! DEBUG
-            !if (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_CONSTANT) then
             do kw=1,n_sigma
               w_s(kw) = w_s(kw)*langmuir_Efactor
             end do
-            !elseif (CVmix_kpp_params_in%LangEFMethod == CVMix_LEF_SHAPEFUNC) then
-            !do kw=1,n_sigma
-            !    !BGR this will need done nicer
-            !    gsigratio = 1.0 + (langmuir_efactor-1.0) * &
-            !                sigma_coord*(1-sigma_coord)**2/0.15
-            !    w_s(kw) = w_s(kw)*gsigratio
-            ! end do
-            !endif
           else
             print*, "ERROR: you must pass in langmuir_Efactor if ",           &
                  "llangmuirEF is true!"
@@ -2447,9 +2411,9 @@ contains
       end if
 
       cvmix_kpp_compute_unresolved_shear(kt) = -Cv*Vtc*zt_cntr(kt)*           &
-!                            N_cntr(kt)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
+                            N_cntr(kt)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
 !BGR the next line is a crude hack to approximate N_cntr at Z=OBL by using the maximum value of N^2
-            maxval(N_cntr)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
+!            maxval(N_cntr)*ws_cntr(kt)/CVmix_kpp_params_in%Ri_crit
       if (cvmix_kpp_compute_unresolved_shear(kt).lt.                          &
           CVmix_kpp_params_in%minVtsqr) then
         cvmix_kpp_compute_unresolved_shear(kt) = CVmix_kpp_params_in%minVtsqr
