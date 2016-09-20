@@ -28,7 +28,9 @@
   use cvmix_kinds_and_types, only : cvmix_r8,                                 &
                                     cvmix_zero,                               &
                                     cvmix_one,                                &
+                                    cvmix_PI,                                 &
                                     cvmix_data_type,                          &
+                                    cvmix_global_params_type,                 &
                                     CVMIX_OVERWRITE_OLD_VAL,                  &
                                     CVMIX_SUM_OLD_AND_NEW_VALS,               &
                                     CVMIX_MAX_OLD_AND_NEW_VALS
@@ -75,6 +77,9 @@
   public :: cvmix_kpp_compute_kOBL_depth
   public :: cvmix_kpp_compute_enhanced_diff
   public :: cvmix_kpp_compute_nu_at_OBL_depth_LMD94
+  ! QL, 160610, new public functions for getting the enhancement factor
+  public :: cvmix_kpp_efactor_model
+
 
   interface cvmix_coeffs_kpp
     module procedure cvmix_coeffs_kpp_low
@@ -1012,7 +1017,7 @@ contains
                                             surf_fric, langmuir_Efactor,      &
                                             w_m, w_s,                         &
                                             CVmix_kpp_params_user)
-    do kw=2,ktup+1
+    do kw=2,kwup
       !   (3b) Evaluate G(sigma) at each cell interface
        !BGR{
        !    KPP boundary layer scheme should not contribute diffusion
@@ -1046,7 +1051,7 @@ contains
        !}BGR
 
       !   (3c) Compute nonlocal term at each cell interface
-      if ((.not.lstable).and.(kw.le.kwup)) then
+      if (.not.lstable) then
         GAtS = cvmix_math_evaluate_cubic(Tshape2, sigma(kw))
         Tnonlocal(kw) = CVmix_kpp_params_in%nonlocal_coeff*GAtS
         GAtS = cvmix_math_evaluate_cubic(Sshape2, sigma(kw))
@@ -2607,5 +2612,97 @@ contains
   end function cvmix_kpp_compute_nu_at_OBL_depth_LMD94
 
 !EOC
+
+! QL, 160606, new function that models the enhancement factor
+
+  function cvmix_kpp_efactor_model(u10, ustar, hbl, CVmix_params_in)
+
+! This function returns the enhancement factor, given the 10-meter
+! wind (m/s), friction velocity (m/s) and the boundary layer depth (m).
+!
+! Qing Li, 160606
+
+! Input
+    real(cvmix_r8), intent(in) :: &
+        ! 10 meter wind (m/s)
+        u10, &
+        ! water-side surface friction velocity (m/s)
+        ustar, &
+        ! boundary layer depth (m)
+        hbl
+    type(cvmix_global_params_type), intent(in) :: CVmix_params_in
+! Local variables
+    ! parameters
+    real(cvmix_r8), parameter :: &
+        ! ratio of U19.5 to U10 (Holthuijsen, 2007)
+        u19p5_to_u10 = 1.075_cvmix_r8, &
+        ! ratio of mean frequency to peak frequency for
+        ! Pierson-Moskowitz spectrum (Webb, 2011)
+        fm_to_fp = 1.296_cvmix_r8, &
+        ! ratio of surface Stokes drift to U10
+        us_to_u10 = 0.0162_cvmix_r8, &
+        ! loss ratio of Stokes transport
+        r_loss = 0.667_cvmix_r8
+
+    real(cvmix_r8) :: us, hm0, fm, fp, vstokes, kphil, kstar
+    real(cvmix_r8) :: z0, z0i, r1, r2, r3, r4, tmp, us_sl, lasl_sqr_i
+    real(cvmix_r8) :: cvmix_kpp_efactor_model
+
+    if (u10 .gt. cvmix_zero .and. ustar .gt. cvmix_zero) then
+      ! surface Stokes drift
+      us = us_to_u10*u10
+      !
+      ! significant wave height from Pierson-Moskowitz
+      ! spectrum (Bouws, 1998)
+      hm0 = 0.0246_cvmix_r8*u10**2
+      !
+      ! peak frequency (PM, Bouws, 1998)
+      tmp = 2.0_cvmix_r8*cvmix_PI*u19p5_to_u10*u10
+      fp = 0.877_cvmix_r8*CVmix_params_in%Gravity/tmp
+      !
+      ! mean frequency
+      fm = fm_to_fp*fp
+      !
+      ! total Stokes transport (a factor r_loss is applied to account
+      !  for the effect of directional spreading, multidirectional waves
+      !  and the use of PM peak frequency and PM significant wave height
+      !  on estimating the Stokes transport)
+      vstokes = 0.125_cvmix_r8*cvmix_PI*r_loss*fm*hm0**2
+      !
+      ! the general peak wavenumber for Phillips' spectrum
+      ! (Breivik et al., 2016) with correction of directional spreading
+      kphil = 0.176_cvmix_r8*us/vstokes
+      !
+      ! surface layer averaged Stokes dirft with Stokes drift profile
+      ! estimated from Phillips' spectrum (Breivik et al., 2016)
+      ! the directional spreading effect from Webb and Fox-Kemper, 2015
+      ! is also included
+      kstar = kphil*2.56_cvmix_r8
+      ! surface layer
+      z0 = 0.2_cvmix_r8*abs(hbl)
+      z0i = cvmix_one/z0
+      ! term 1 to 4
+      r1 = (0.151_cvmix_r8/kphil*z0i-0.84_cvmix_r8) &
+            *(cvmix_one-exp(-2.0_cvmix_r8*kphil*z0))
+      r2 = -(0.84_cvmix_r8+0.0591_cvmix_r8/kphil*z0i) &
+             *sqrt(2.0_cvmix_r8*cvmix_PI*kphil*z0) &
+             *erfc(sqrt(2.0_cvmix_r8*kphil*z0))
+      r3 = (0.0632_cvmix_r8/kstar*z0i+0.125_cvmix_r8) &
+            *(cvmix_one-exp(-2.0_cvmix_r8*kstar*z0))
+      r4 = (0.125_cvmix_r8+0.0946_cvmix_r8/kstar*z0i) &
+             *sqrt(2.0_cvmix_r8*cvmix_PI*kstar*z0) &
+             *erfc(sqrt(2.0_cvmix_r8*kstar*z0))
+      us_sl = us*(0.715_cvmix_r8+r1+r2+r3+r4)
+      !
+      ! enhancement factor (Li et al., 2016)
+      lasl_sqr_i = us_sl/ustar
+      cvmix_kpp_efactor_model = sqrt(cvmix_one &
+                 +cvmix_one/1.5_cvmix_r8**2*lasl_sqr_i &
+                 +cvmix_one/5.4_cvmix_r8**4*lasl_sqr_i**2)
+    else
+      cvmix_kpp_efactor_model = cvmix_one
+    endif
+
+  end function cvmix_kpp_efactor_model
 
 end module cvmix_kpp
